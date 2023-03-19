@@ -1,52 +1,20 @@
 use std::io::Read;
 use std::net::TcpStream;
 
-#[derive(Debug)]
-enum HttpVersion {
-    Unknown,
-    V0_9(String),
-    V1_0(String),
-    V1_1(String),
-    V2_0(String),
-    V3_0(String),
-}
-
-impl HttpVersion {
-    fn parse(http_v_as_str: &str) -> HttpVersion {
-        match http_v_as_str {
-            "HTTP/0.9" => HttpVersion::V0_9(String::from(http_v_as_str)),
-            "HTTP/1.0" => HttpVersion::V1_0(String::from(http_v_as_str)),
-            "HTTP/1.1" => HttpVersion::V1_1(String::from(http_v_as_str)),
-            "HTTP/2.0" => HttpVersion::V2_0(String::from(http_v_as_str)),
-            "HTTP/3.0" => HttpVersion::V3_0(String::from(http_v_as_str)),
-            _ => HttpVersion::Unknown
-        }
-    }
-}
+use crate::core::http::common::*;
 
 #[derive(Debug)]
-struct HttpRequestLine {
-    method: String,
-    uri: String,
-    version: HttpVersion,
-}
-
-#[derive(Debug)]
-struct HttpHeader {
-    key: String,
-    value: String,
-}
-
-#[derive(Debug)]
-struct HttpPayload {
-    value: String,
+pub struct HttpRequestLine {
+    pub method: String,
+    pub uri: String,
+    pub version: HttpVersion,
 }
 
 #[derive(Debug)]
 pub struct HttpRequest {
-    request_line: HttpRequestLine,
-    headers: Vec<HttpHeader>,
-    payload: HttpPayload,
+    pub request_line: HttpRequestLine,
+    pub headers: Vec<HttpHeader>,
+    pub payload: HttpPayload,
 }
 
 pub fn get_request_from_stream(tcp_stream: &mut TcpStream) -> HttpRequest {

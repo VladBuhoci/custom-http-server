@@ -30,6 +30,7 @@ impl Server {
 }
 
 mod helpers {
+    use std::io::Write;
     use std::net::{Shutdown, SocketAddr, TcpListener, TcpStream};
     use std::process;
 
@@ -57,6 +58,10 @@ mod helpers {
         tcp_stream.set_nonblocking(true).expect("TODO: panic message");
 
         let http_request = http::request::get_request_from_stream(&mut tcp_stream);
+        let http_response = http::response::create_response();
+
+        tcp_stream.write_all(http_response.to_string().as_bytes());
+        tcp_stream.flush();
 
         // Cleanup.
         tcp_stream.shutdown(Shutdown::Both).expect("TODO: panic message");
