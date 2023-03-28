@@ -58,12 +58,14 @@ mod helpers {
         tcp_stream.set_nonblocking(true).expect("TODO: panic message");
 
         let http_request = http::request::get_request_from_stream(&mut tcp_stream);
-        let http_response = http::response::create_response();
+        // TODO: verify that it is a valid HTTP request.
+        // TODO: process the request and collect necessary data for producing a response.
+        let http_response = http::response::create_response(http_request.request_line.version);
 
-        tcp_stream.write_all(http_response.to_string().as_bytes());
-        tcp_stream.flush();
+        tcp_stream.write_all(http_response.to_string().as_bytes()).unwrap();
+        tcp_stream.flush().unwrap();
 
         // Cleanup.
-        tcp_stream.shutdown(Shutdown::Both).expect("TODO: panic message");
+        tcp_stream.shutdown(Shutdown::Both).expect("TCP stream shutdown call failed");
     }
 }

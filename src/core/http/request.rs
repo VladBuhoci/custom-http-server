@@ -13,7 +13,7 @@ pub struct HttpRequestLine {
 #[derive(Debug)]
 pub struct HttpRequest {
     pub request_line: HttpRequestLine,
-    pub headers: Vec<HttpHeader>,
+    pub headers: HttpHeaders,
     pub payload: HttpPayload,
 }
 
@@ -61,8 +61,10 @@ fn parse_stream_buffer(stream_buffer: String) -> HttpRequest {
     }
 
     // Next lines contain headers (one key-value pair per line) until an empty line is met.
-    let mut http_headers = Vec::with_capacity(5);
+    let http_headers;
     {
+        let mut headers_vec = Vec::with_capacity(5);
+
         loop {
             let header_line = buffer_lines.next().unwrap();
             if header_line == "" {
@@ -75,7 +77,11 @@ fn parse_stream_buffer(stream_buffer: String) -> HttpRequest {
                 value: header_pair.next().unwrap().trim().to_string(),
             };
 
-            http_headers.push(header);
+            headers_vec.push(header);
+        }
+
+        http_headers = HttpHeaders {
+            headers: headers_vec,
         }
     }
 
