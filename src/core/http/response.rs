@@ -44,7 +44,7 @@ pub fn create_response(http_version: HttpVersion) -> HttpResponse {
     // todo!("TODO: see what params to add and how to create this nicely (perhaps with a builder?)");
 
     // TODO: get the payload in a proper way, along with the value for the "Content-Type" header.
-    let payload_str = "<TBD>";
+    let (payload_str, payload_type) = get_payload_content_and_type();
 
     let http_status = HttpStatus {
         code: 200,
@@ -69,8 +69,7 @@ pub fn create_response(http_version: HttpVersion) -> HttpResponse {
         // Last-Modified: Wed, 22 Jul 2009 19:15:56 GMT ???
 
         .add_int("Content-Length", payload_str.len() as i32)
-        // TODO: find a real way of determining/setting this value.
-        .add_str("Content-Type", "text/plain")
+        .add_string("Content-Type", payload_type)
 
         // Accept-Ranges: bytes ???
         // Vary: Accept-Encoding ???
@@ -93,4 +92,8 @@ pub fn create_response(http_version: HttpVersion) -> HttpResponse {
         headers: http_headers,
         payload: http_payload,
     }
+}
+
+fn get_payload_content_and_type() -> (String, String) {
+    ("<html><body><p>Hello, client!</p></body></html>".into(), "text/html".into())
 }

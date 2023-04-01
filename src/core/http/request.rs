@@ -1,5 +1,6 @@
 use std::io::Read;
 use std::net::TcpStream;
+use std::str::Lines;
 
 use crate::core::http::common::*;
 
@@ -49,41 +50,11 @@ fn parse_stream_buffer(stream_buffer: String) -> HttpRequest {
     let http_req_line;
     {
         let first_buffer_line = buffer_lines.next().unwrap();
-        let first_buffer_line_tokens = first_buffer_line
-            .split(" ")
-            .collect::<Vec<&str>>();
-
-        http_req_line = HttpRequestLine {
-            method: first_buffer_line_tokens[0].parse().unwrap(),
-            uri: first_buffer_line_tokens[1].parse().unwrap(),
-            version: HttpVersion::parse(first_buffer_line_tokens[2]),
-        };
+        http_req_line = parse_http_request_line(first_buffer_line);
     }
 
     // Next lines contain headers (one key-value pair per line) until an empty line is met.
-    let http_headers;
-    {
-        let mut headers_vec = Vec::with_capacity(5);
-
-        loop {
-            let header_line = buffer_lines.next().unwrap();
-            if header_line == "" {
-                break;
-            }
-
-            let mut header_pair = header_line.split(":");
-            let header = HttpHeader {
-                key: header_pair.next().unwrap().trim().to_string(),
-                value: header_pair.next().unwrap().trim().to_string(),
-            };
-
-            headers_vec.push(header);
-        }
-
-        http_headers = HttpHeaders {
-            headers: headers_vec,
-        }
-    }
+    let http_headers= parse_http_header_lines(&mut buffer_lines);
 
     // At the end we find the payload.
     let http_payload;
@@ -99,5 +70,50 @@ fn parse_stream_buffer(stream_buffer: String) -> HttpRequest {
         request_line: http_req_line,
         headers: http_headers,
         payload: http_payload,
+    }
+}
+
+/**
+ * Expects a string with the format: \<METHOD> \<URI> \<HTTP VERSION>
+ */
+fn parse_http_request_line(string_to_parse: &str) -> HttpRequestLine {
+    let string_tokens = string_to_parse
+        .split(" ")
+        .collect::<Vec<&str>>();
+
+    HttpRequestLine {
+        method: string_tokens[0].parse().unwrap(),
+        uri: string_tokens[1].parse().unwrap(),
+        version: HttpVersion::parse(string_tokens[2]),
+    }
+}
+
+/**
+ * Expects a string with the format: \<HEADER_NAME> \<HEADER_VALUE>
+ */
+fn parse_http_header_line(string_to_parse: &str) -> HttpHeader {
+    let mut header_pair = string_to_parse.split(":");
+
+    HttpHeader {
+        key: header_pair.next().unwrap().trim().to_string(),
+        value: header_pair.next().unwrap().trim().to_string(),
+    }
+}
+
+fn parse_http_header_lines(string_lines_to_parse: &mut Lines<'_>) -> HttpHeaders {
+    let mut headers_vec = Vec::with_capacity(5);
+
+    loop {
+        let header_line = string_lines_to_parse.next().unwrap();
+        if header_line == "" {
+            break;
+        }
+
+        let header = parse_http_header_line(header_line);
+        headers_vec.push(header);
+    }
+
+    HttpHeaders {
+        headers: headers_vec,
     }
 }

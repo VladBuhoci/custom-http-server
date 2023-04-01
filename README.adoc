@@ -1,0 +1,8 @@
+:doctype: book
+
+<<<
+= Custom HTTP Server
+
+NOTE: This was simply made for learning purposes (exploring the HTTP protocol, as well as learning a bit of Rust).
+
+NOTE: TODO: more to come
