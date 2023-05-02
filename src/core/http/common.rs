@@ -2,8 +2,8 @@ use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
 pub enum HttpVersion {
-    Unknown(String),
-    V0_9(String),
+    Unknown(String),    // bad, drop connections in this case
+    V0_9(String),       // we don't support this, we'll drop all connections that seem to use v0.9
     V1_0(String),
     V1_1(String),
     V2_0(String),

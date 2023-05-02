@@ -1,8 +1,23 @@
-:doctype: book
+:doctype: article
+// :stylesheet:
 
-<<<
-= Custom HTTP Server
+== Custom HTTP Server
 
-NOTE: This was simply made for learning purposes (exploring the HTTP protocol, as well as learning a bit of Rust).
+[IMPORTANT]
+====
+This was simply made for learning purposes (exploring the HTTP protocol, as well as learning a bit of Rust and AsciiDoc).
 
-NOTE: TODO: more to come
+It was never meant to be a serious thing.
+====
+
+[NOTE]
+====
+.TODO:
+- implement static routing (add details)
+- implement dynamic routing (add details)
+- more to come
+====
+
+=== What can it do?
+
+TODO: finish this chapter.

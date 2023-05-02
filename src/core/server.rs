@@ -55,10 +55,7 @@ mod helpers {
         let mut tcp_stream = new_connection.0;
         let socket_addr = new_connection.1;
 
-        tcp_stream.set_nonblocking(true).expect("TODO: panic message");
-
         let http_request = http::request::get_request_from_stream(&mut tcp_stream);
-        // TODO: verify that it is a valid HTTP request.
         // TODO: process the request and collect necessary data for producing a response.
         let http_response = http::response::create_response(http_request.request_line.version);
 
