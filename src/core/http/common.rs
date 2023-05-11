@@ -1,38 +1,55 @@
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
-pub enum HttpVersion {
-    Unknown(String),    // bad, drop connections in this case
-    V0_9(String),       // we don't support this, we'll drop all connections that seem to use v0.9
-    V1_0(String),
-    V1_1(String),
-    V2_0(String),
-    V3_0(String),
+pub struct HttpVersion {
+    pub major_version: u8,
+    pub minor_version: u8,
+    pub is_supported: bool,
 }
 
 impl HttpVersion {
-    pub fn parse(http_v_as_str: &str) -> HttpVersion {
-        match http_v_as_str {
-            "HTTP/0.9" => HttpVersion::V0_9(String::from(http_v_as_str)),
-            "HTTP/1.0" => HttpVersion::V1_0(String::from(http_v_as_str)),
-            "HTTP/1.1" => HttpVersion::V1_1(String::from(http_v_as_str)),
-            "HTTP/2.0" => HttpVersion::V2_0(String::from(http_v_as_str)),
-            "HTTP/3.0" => HttpVersion::V3_0(String::from(http_v_as_str)),
-            _ => HttpVersion::Unknown(String::from("HTTP/Unknown"))
+    const HTTP_V__UNK: HttpVersion = HttpVersion::new(0, 0, false);
+    const HTTP_V__0_9: HttpVersion = HttpVersion::new(0, 9, false);
+    const HTTP_V__1_0: HttpVersion = HttpVersion::new(1, 0, true);
+    const HTTP_V__1_1: HttpVersion = HttpVersion::new(1, 1, false);
+    const HTTP_V__2_0: HttpVersion = HttpVersion::new(2, 0, false);
+    const HTTP_V__3_0: HttpVersion = HttpVersion::new(3, 0, false);
+
+    const fn new(major_v: u8, minor_v: u8, is_supported: bool) -> Self {
+        HttpVersion {
+            major_version: major_v,
+            minor_version: minor_v,
+            is_supported,
         }
+    }
+
+    pub fn parse_str(http_v_as_str: &str) -> Result<HttpVersion, String> {
+        match http_v_as_str {
+            "HTTP/0.9" => Ok(HttpVersion::HTTP_V__0_9),
+            "HTTP/1.0" => Ok(HttpVersion::HTTP_V__1_0),
+            "HTTP/1.1" => Ok(HttpVersion::HTTP_V__1_1),
+            "HTTP/2.0" => Ok(HttpVersion::HTTP_V__2_0),
+            "HTTP/3.0" => Ok(HttpVersion::HTTP_V__3_0),
+            _ => Err(format!("** Unknown HTTP protocol version: '{}'", http_v_as_str))
+        }
+    }
+
+    pub fn get_for_version(major_v: u8, minor_v: u8) -> Result<HttpVersion, String> {
+        let http_version_as_str = HttpVersion::get_version_format_as_str(major_v, minor_v);
+
+        HttpVersion::parse_str(http_version_as_str.as_str())
+    }
+
+    fn get_version_format_as_str(major_v: u8, minor_v: u8) -> String {
+        format!("HTTP/{}.{}", major_v, minor_v)
     }
 }
 
 impl Display for HttpVersion {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            HttpVersion::Unknown(v) => write!(f, "{}", v),
-            HttpVersion::V0_9(v) => write!(f, "{}", v),
-            HttpVersion::V1_0(v) => write!(f, "{}", v),
-            HttpVersion::V1_1(v) => write!(f, "{}", v),
-            HttpVersion::V2_0(v) => write!(f, "{}", v),
-            HttpVersion::V3_0(v) => write!(f, "{}", v),
-        }
+        let http_version_as_str = HttpVersion::get_version_format_as_str(self.major_version, self.minor_version);
+
+        write!(f, "{}", http_version_as_str)
     }
 }
 

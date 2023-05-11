@@ -81,10 +81,18 @@ fn parse_http_request_line(string_lines_to_parse: &mut Lines<'_>) -> HttpRequest
         .split(" ")
         .collect::<Vec<&str>>();
 
+    let http_v = if string_tokens.len() == 2 {
+        // This request doesn't have the third component - the HTTP version - which is how the original protocol was defined.
+        // We set it to v0.9 ourselves in this case.
+        HttpVersion::get_for_version(0, 9).unwrap()
+    } else {
+        HttpVersion::parse_str(string_tokens[2]).unwrap()
+    };
+
     HttpRequestLine {
         method: string_tokens[0].parse().unwrap(),
         uri: string_tokens[1].parse().unwrap(),
-        version: HttpVersion::parse(string_tokens[2]),
+        version: http_v,
     }
 }
 
