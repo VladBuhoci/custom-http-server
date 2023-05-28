@@ -1,6 +1,7 @@
 //use...
 
 mod core;
+mod utils;
 
 fn main() -> std::io::Result<()> {
     let host = String::from("localhost");
