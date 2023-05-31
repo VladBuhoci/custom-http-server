@@ -1,9 +1,50 @@
 use std::sync::{Arc, mpsc, Mutex};
 use std::thread;
 
+type Job = Box<dyn FnOnce() + Send + 'static>;
+
+enum Message {
+    NewJob(Job),
+    Terminate,
+}
+
+struct Worker {
+    id: usize,
+    thread: Option<thread::JoinHandle<()>>,
+}
+
+impl Worker {
+    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Message>>>) -> Self {
+        let thread = thread::spawn(move || loop {
+            let message = receiver
+                .lock()
+                .unwrap()
+                .recv()
+                .unwrap();
+
+            match message {
+                Message::NewJob(job) => {
+                    println!("Worker [{}] got a new job! Executing job...", id);
+                    job();
+                }
+
+                Message::Terminate => {
+                    println!("Worker [{}] was told to terminate! Stopping listening to new jobs...", id);
+                    break;
+                }
+            }
+        });
+
+        Self {
+            id,
+            thread: Some(thread),
+        }
+    }
+}
+
 pub struct ThreadPool {
     workers: Vec<Worker>,
-    sender: mpsc::Sender<Job>,
+    sender: mpsc::Sender<Message>,
 }
 
 impl ThreadPool {
@@ -31,33 +72,32 @@ impl ThreadPool {
     {
         let job = Box::new(f);
 
-        self.sender.send(job).unwrap();
+        self.sender.send(Message::NewJob(job)).unwrap();
     }
 }
 
-struct Worker {
-    id: usize,
-    thread: thread::JoinHandle<()>,
-}
+impl Drop for ThreadPool {
+    fn drop(&mut self) {
+        println!("Sending 'Terminate' message to all workers.");
 
-impl Worker {
-    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Self {
-        let thread = thread::spawn(move || loop {
-            let job = receiver
-                .lock()
-                .unwrap()
-                .recv()
-                .unwrap();
+        // We have no control over which worker gets the message first, second, third...
+        // But we know how many workers we have and that each worker will eventually receive the message.
+        // So it is enough to send N 'Terminate' messages, where N is the number of workers.
+        for _ in &self.workers {
+            self.sender.send(Message::Terminate).unwrap();
+        }
 
-            println!("Worker [{}] got a job! Executing...", id);
-            job();
-        });
+        println!("Shutting down all workers.");
 
-        Self {
-            id,
-            thread,
+        // Wait for workers to end their current jobs (and process the 'terminate' signal/message).
+        for worker in &mut self.workers {
+            println!("Waiting for worker '{}' to shut down...", worker.id);
+
+            if let Some(thread) = worker.thread.take() {
+                thread.join().unwrap();
+            }
+
+            println!("Worker '{}' has been shut down.", worker.id);
         }
     }
 }
-
-type Job = Box<dyn FnOnce() + Send + 'static>;
